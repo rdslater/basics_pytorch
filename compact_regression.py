@@ -35,6 +35,15 @@ class TabularDataset(Dataset):
 
 
 def make_loaders(batch_size=BATCH_SIZE, seed=SEED):
+    """
+    Very specific to the CA Housing Dataset.  Pulls in the 
+    dataframe, scales the data and then puts  it 
+    through the dataset and dataloader
+    
+    returns a training and val data loader along with the size
+    if of the training data.
+    """
+    
     data = fetch_california_housing(as_frame=True)
     X_train, X_val, y_train, y_val = train_test_split(
         data.data, data.target, random_state=seed
@@ -55,6 +64,10 @@ def make_loaders(batch_size=BATCH_SIZE, seed=SEED):
 
 # ---- Model ----
 def build_model(in_features, hidden=HIDDEN, out_features=1):
+    """Ties in the feature size with the initial hidden layer
+    Note that the out features of 1 is because this is a regression problem
+    
+    """
     return nn.Sequential(
         nn.Linear(in_features, hidden),
         nn.ReLU(),
@@ -65,11 +78,17 @@ def build_model(in_features, hidden=HIDDEN, out_features=1):
 # ---- Train / eval ----
 def run_epoch(model, loader, criterion, device, optimizer=None):
     """Train if an optimizer is given, otherwise evaluate. Returns avg loss."""
-    training = optimizer is not None
+    training = optimizer is not None  # Clever part - sets training to true/false
     model.train(training)
     total_loss, n = 0.0, 0
 
     with torch.set_grad_enabled(training):
+        """
+        Above line alows a single loop for training and validataion 
+        turns off learning if optimizer not present.  Single logic for 
+        both loops.  If nessecary having a seprate loop is minor
+        """
+        
         for batch in loader:
             features = batch["features"].to(device)
             targets = batch["targets"].to(device)
