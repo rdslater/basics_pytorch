@@ -1,26 +1,47 @@
 # basics_pytorch
-This is my review of my fundamentals in pytorch.  I was using lightning for a long time and want to get back to basics so I can do GaNs and more of the hard problems.  Also like a challenge and review is good.
 
-`bare_bones_regression.py`  - this is basic regression problem using the California Housing Dataset.  Basic Training loop so I can practice organizing my code.  This will probably become my introductory teaching example, so lots of code comments in here
+A personal refresher on raw PyTorch. I spent a long time in PyTorch Lightning and want to rebuild the fundamentals by hand before tackling harder projects like GANs.
 
-`compact_regression.py`  I worked with a coding agent to make a better structured file.  The bare bones was me "re-learning" raw pytorch so I had things scattered all over.  The other thing I like about this one is it switches on `torch.no_grad()` by passing an optimizer or not.  A little dangerous, but I like compact effcient code.  This is a refactor of the bare_bones script--does the same thing, just better readibility.
+Each script is a small, runnable step. Later scripts are built by modifying earlier ones, so reading them in order shows how a training loop grows.
 
-I added in early stopping on 10/7--yanking it out and adding early stopping separate
+## How the files grow
 
-`compact_classification` I just used the digits set for a basic classification.  here I made the fit function more explicit so its very visible what is going on.  Just a classification example
+```mermaid
+flowchart TD
+    A["bare_bones_regression.py<br/>plain loop, heavily commented"]
+    B["compact_regression.py<br/>refactored, shared train/eval function"]
+    C["compact_regression_earlystopping.py<br/>+ early stopping"]
+    D["compact_classification.py<br/>classification + explicit fit()"]
+    E["EarlyStopping.py<br/>reusable module"]
 
-`EarlyStopping.py` this contains a claude generated Early stopping.  Yeah I cheated and was lazy, but it made a very nice feature rich early stopping module.  Don't need to re-invent the wheel here.
+    A -->|"refactor"| B
+    B -->|"add early stopping"| C
+    B -->|"swap task: regression → classification"| D
+    E -.->|"imported by"| C
+```
 
-`compact_regression_earlystopping.py` adds in Early Stopping to compact_regression.py
-## Next Steps
-- ~~Early Stopping~~
-- Model Checkpoints (with Lightning style naming)
-- Tensorboard and CSV logging (Printing is nice, logging is better)
-- TQDM profress Bars. (I'm fancy!)
+## Reading order
 
-## Lineage of Files
-Yes I could just store this as history/commits, but this is for education so its good to compare how the scripts "grow" as specific features get added in
+| # | File | Builds on | What it adds |
+|---|------|-----------|--------------|
+| 1 | `bare_bones_regression.py` | – | Regression on the California Housing dataset with a plain training loop. Heavily commented, meant as the teaching baseline. |
+| 2 | `compact_regression.py` | 1 | Same task, much shorter. One epoch function handles both training and validation, toggling `torch.no_grad()` depending on whether an optimizer is passed. Compact, but easy to get wrong if you forget the optimizer. |
+| 3 | `EarlyStopping.py` | – | A reusable early stopping module (generated with Claude, kept as a standalone component). |
+| 4 | `compact_regression_earlystopping.py` | 2, 3 | The compact regression script with early stopping wired into the loop. |
+| 5 | `compact_classification.py` | 2 | Classification on the digits dataset, with an explicit `fit()` function. |
 
-`bare_bones_regression.py` -> (Refactor) -> `compact_regression.py` -> (Add Early Stopping) -> `compact_regression_earlystopping.py`
+## Running
 
-`compact_regression.py` (Explicit Val Call + Change to Classification) ->  `compact_classification.py`
+```bash
+pip install -e .          # dependencies are declared in pyproject.toml
+python bare_bones_regression.py
+python compact_regression_earlystopping.py
+python compact_classification.py
+```
+
+## Roadmap
+
+- [x] Early stopping
+- [ ] Model checkpoints with Lightning-style naming
+- [ ] TensorBoard and CSV logging
+- [ ] tqdm progress bars
