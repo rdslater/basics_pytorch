@@ -38,6 +38,11 @@ python bare_bones_regression.py
 python compact_regression_earlystopping.py
 python compact_classification.py
 ```
+Results (All numbers ill vary slightly based on seeds):
+- bare_bones_regression: `val loss 0.3291`
+- compact_regression: `Best val loss: 0.3314`
+- compact_regression_early_stoping: `Stopped at epoch 15: no improvement > 0.001 for 3 checks (best=0.344 @ 12) \n Best val loss: 0.3444`
+- compact_classification: `Best val accuracy: 0.976`
 
 ## Roadmap
 
