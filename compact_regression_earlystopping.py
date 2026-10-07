@@ -5,6 +5,7 @@ from sklearn.datasets import fetch_california_housing
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader, Dataset
+from EarlyStopping import EarlyStopping
 # ---- Config ----
 SEED = 0
 BATCH_SIZE = 32
@@ -19,12 +20,12 @@ class TabularDataset(Dataset):
     """Wraps features/targets (DataFrame, Series or ndarray) as tensors."""
 
     def __init__(self, features, targets, task="regression"):
-        self.X = torch.tensor(np.asarray(features), dtype=torch.float32)
+        self.X = torch.as_tensor(np.asarray(features), dtype=torch.float32)
         y = np.asarray(targets)
         if task == "classification":
-            self.y = torch.tensor(y, dtype=torch.long).view(-1)
+            self.y = torch.as_tensor(y, dtype=torch.long).view(-1)
         else:
-            self.y = torch.tensor(y, dtype=torch.float32).reshape(len(y), -1)
+            self.y = torch.as_tensor(y, dtype=torch.float32).reshape(len(y), -1)
 
     def __len__(self):
         return len(self.X)
@@ -106,19 +107,19 @@ def run_epoch(model, loader, criterion, device, optimizer=None):
     return total_loss / n
 
 
-def fit(model, train_loader, val_loader, criterion, optimizer, device,
+def fit(model, train_loader, val_loader, criterion, optimizer, device, stopper,
         num_epochs=NUM_EPOCHS, checkpoint=CHECKPOINT):
-    best_val_loss = float("inf")
     for epoch in range(1, num_epochs + 1):
-        train_loss = run_epoch(model, train_loader, criterion, device, optimizer)
+        train_loss = run_epoch(model, train_loader,
+                               criterion, device, optimizer)
         val_loss = run_epoch(model, val_loader, criterion, device)
 
         print(f"Epoch {epoch:02d} | train {train_loss:.4f} | val {val_loss:.4f}")
-
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            torch.save(model.state_dict(), checkpoint)
-    return best_val_loss
+        if stopper.step(val_loss, model=model, step=epoch):
+            print(f"Stopped at epoch {epoch}: {stopper.stop_reason} (best={stopper.best:.3f} @ {stopper.best_step})")
+            break
+    stopper.restore(model)
+    return stopper.best
 
 
 # ---- Entry point ----
@@ -130,8 +131,10 @@ def main():
     model = build_model(n_features).to(device)
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
+    stopper = EarlyStopping(mode="min", patience=2, min_delta=1e-3)
+
     best = fit(model, train_loader, val_loader,
-               criterion, optimizer, device)
+               criterion, optimizer, device, stopper)
     print(f"Best val loss: {best:.4f}")
 
 
